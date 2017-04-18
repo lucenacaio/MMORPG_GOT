@@ -77,3 +77,16 @@ module.exports.ordenarAcaoSudito = function(application, req, res) {
     res.redirect("jogo?msg=B");
 
 }
+
+module.exports.revogarAcao = function(application, req, res) {
+    var url_query = req.query;
+
+    let connection = application.config.dbConnection;
+    let JogoDAO = new application.app.models.JogoDAO(connection);
+
+    let _id = url_query.id_acao;
+
+    JogoDAO.revogarAcao(_id, res);
+
+
+}

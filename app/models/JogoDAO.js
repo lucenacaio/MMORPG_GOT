@@ -1,3 +1,5 @@
+var ObjectID = require('mongodb').ObjectId;
+
 function JogoDAO(connection) {
     this._connection = connection();
 }
@@ -34,23 +36,18 @@ JogoDAO.prototype.acao = function(data) {
     this._connection.open(function(err, mongoclient) {
         mongoclient.collection("acao", function(err, collection) {
             let date = new Date();
-            let tempo = null;
-            switch (parseInt(data.acao)) {
-                case 1:
-                    tempo = 1 * 60 * 60000;
-                    break;
-                case 2:
-                    tempo = 2 * 60 * 60000;
-                    break;
-                case 3:
-                    tempo = 5 * 60 * 60000;
-                    break;
-                case 4:
-                    tempo = 5 * 60 * 60000;
-                    break;
-            }
-            data.acao_termina_em = date.getTime() + tempo;
+            data.acao_termina_em = date.getTime() + _calcTempoAcao(data.acao);
             collection.insert(data);
+        });
+        mongoclient.collection("jogo", function(err, collection) {
+            let moedas = _decrementaMoeda(data);
+            collection.update({
+                usuario: data.usuario
+            }, {
+                $inc: {
+                    moeda: moedas
+                }
+            });
             mongoclient.close();
         });
     });
@@ -67,6 +64,58 @@ JogoDAO.prototype.getAcoes = function(usuario, res) {
             });
         });
     });
+}
+
+JogoDAO.prototype.revogarAcao = function(_id, res) {
+    this._connection.open(function(err, mongoclient) {
+        mongoclient.collection("acao", function(err, collection) {
+            collection.remove({ _id: ObjectID(_id) },
+                function(err, result) {
+                    res.redirect("jogo?msg=D");
+                    mongoclient.close();
+                });
+        });
+    });
+}
+
+function _decrementaMoeda(acao) {
+    let moedas = null;
+    switch (parseInt(acao.acao)) {
+        case 1:
+            moedas = -2 * acao.quantidade;
+            break;
+        case 2:
+            moedas = -3 * acao.quantidade;
+            break;
+        case 3:
+            moedas = -1 * acao.quantidade;
+            break;
+        case 4:
+            moedas = -1 * acao.quantidade;
+            break;
+    }
+
+    return moedas;
+}
+
+function _calcTempoAcao(acao) {
+    let tempo = null;
+    switch (parseInt(acao)) {
+        case 1:
+            tempo = 1 * 60 * 60000;
+            break;
+        case 2:
+            tempo = 2 * 60 * 60000;
+            break;
+        case 3:
+            tempo = 5 * 60 * 60000;
+            break;
+        case 4:
+            tempo = 5 * 60 * 60000;
+            break;
+    }
+
+    return tempo;
 }
 
 module.exports = function() {

@@ -35,19 +35,36 @@ JogoDAO.prototype.acao = function(data) {
         mongoclient.collection("acao", function(err, collection) {
             let date = new Date();
             let tempo = null;
-            switch (data.acao) {
+            switch (parseInt(data.acao)) {
                 case 1:
                     tempo = 1 * 60 * 60000;
+                    break;
                 case 2:
                     tempo = 2 * 60 * 60000;
+                    break;
                 case 3:
                     tempo = 5 * 60 * 60000;
+                    break;
                 case 4:
                     tempo = 5 * 60 * 60000;
+                    break;
             }
             data.acao_termina_em = date.getTime() + tempo;
             collection.insert(data);
             mongoclient.close();
+        });
+    });
+}
+
+JogoDAO.prototype.getAcoes = function(usuario, res) {
+    this._connection.open(function(err, mongoclient) {
+        mongoclient.collection("acao", function(err, collection) {
+            let date = new Date();
+            let momento_atual = date.getTime();
+            collection.find({ usuario: usuario, acao_termina_em: { $gt: momento_atual } }).toArray(function(err, result) {
+                res.render("pergaminhos", { acoes: result });
+                mongoclient.close();
+            });
         });
     });
 }
